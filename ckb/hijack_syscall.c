@@ -6,6 +6,7 @@
 #include "bits/syscall.h"
 #include "sys/mman.h"
 #include "syscall_arch.h"
+#include "jolt_vm.h"
 
 struct syscall_context {
   long n;
@@ -18,10 +19,16 @@ struct syscall_context {
   int *processed;
 };
 
-extern char _end[];
+extern char __heap_start[];
+extern char __heap_end[];
 
-static long default_brk_min = (long)_end;
-static long default_brk_max = 0x00300000;
+/*
+ * Jolt has __heap_start and __heap_end symbols available for us to
+ * check heap region.
+ */
+
+static long default_brk_min = (long)__heap_start;
+static long default_brk_max = (long)__heap_end;
 
 weak_alias(default_brk_min, __ckb_hijack_brk_min);
 weak_alias(default_brk_max, __ckb_hijack_brk_max);
@@ -119,15 +126,7 @@ static long default_ioctl(void *c) {
 }
 weak_alias(default_ioctl, __ckb_hijack_ioctl);
 
-/* This shortcut allows us to skip one level of recursion
- */
-static inline long ckb_debug(char *buffer) {
-  register long a7 __asm__("a7") = 2177;
-  register long a0 __asm__("a0") = (long)buffer;
-  __asm_syscall("r"(a7), "0"(a0))
-}
-
-/* writev result is reinterpreted to ckb_debug syscall
+/* writev result is reinterpreted to jolt IO handler
  */
 static long default_writev(void *c) {
   struct syscall_context *context = (struct syscall_context *)c;
@@ -148,18 +147,7 @@ static long default_writev(void *c) {
 
   ssize_t total = 0;
   for (int i = 0; i < iovcnt; i++) {
-    size_t written = 0;
-    while (written < iov[i].iov_len) {
-      char buffer[1025];
-      size_t wrote = iov[i].iov_len - written;
-      if (wrote > 1024) {
-        wrote = 1024;
-      }
-      memcpy(buffer, &((char *)iov[i].iov_base)[written], wrote);
-      buffer[wrote] = '\0';
-      ckb_debug(buffer);
-      written += wrote;
-    }
+    jolt_vm_print(iov[i].iov_base, iov[i].iov_len);
     total += iov[i].iov_len;
   }
   return total;
