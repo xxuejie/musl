@@ -37,3 +37,7 @@ mkdir -p release/include/ckb
 for f in ${CKB_HEADERS[@]}; do
   cp ckb/$f.h release/include/ckb/$f.h
 done
+
+rm -rf release/include/jolt
+mkdir -p release/include/jolt
+cp ckb/jolt* release/include/jolt/

@@ -4,7 +4,31 @@
 #define START "_start"
 #define ENTRYPOINT main
 
-#include "crt_arch.h"
+/*
+ * Adapted from
+ * https://github.com/LayerZero-Labs/ZeroOS/blob/c4087a825bf3e8157dbb2da01ee196d2a9841e4c/crates/zeroos-arch-riscv/src/boot.rs#L8
+ * Jolt has its own setup requirement.
+ */
+__asm__(
+".section .sdata,\"aw\"\n"
+".text\n"
+".global " START "\n"
+".type " START ",%function\n"
+START ":\n"
+".weak __global_pointer$\n"
+".hidden __global_pointer$\n"
+".option push\n"
+".option norelax\n\t"
+"lla gp, __global_pointer$\n"
+".option pop\n\t"
+".weak __stack_top\n"
+".hidden __stack_top\n"
+"lla sp, __stack_top\n"
+"andi sp, sp, -16\n"
+"tail " START "_c"
+);
+
+#include "jolt_vm.h"
 #include "syscall.h"
 
 int ENTRYPOINT(int, char **, char **);
@@ -19,8 +43,9 @@ void _start_c(long *p) {
   __init_tls(0);
   __libc_start_init();
 
-  int c = ENTRYPOINT(argc, argv, 0);
-  for (;;) __syscall(SYS_exit, c);
+  /* jolt VM does not expose exit code */
+  ENTRYPOINT(argc, argv, 0);
+  for (;;) jolt_vm_exit();
 }
 
 /*
