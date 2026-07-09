@@ -36,15 +36,18 @@ int ENTRYPOINT(int, char **, char **);
 void __init_tls(size_t *);
 void __libc_start_init(void);
 
-/* A simpler entrypoint that suits CKB's needs */
+/*
+ * Jolt does not use argc / argv, passing 0 instead.
+ * The previous version would try to read argc (address 0),
+ * which is problem for proving side.
+ */
 void _start_c(long *p) {
-  int argc = p[0];
-  char **argv = (void *)(p + 1);
+  (void)p;
   __init_tls(0);
   __libc_start_init();
 
   /* jolt VM does not expose exit code */
-  ENTRYPOINT(argc, argv, 0);
+  ENTRYPOINT(0, 0, 0);
   for (;;) jolt_vm_exit();
 }
 
