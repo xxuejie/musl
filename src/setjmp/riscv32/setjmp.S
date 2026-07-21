@@ -23,6 +23,7 @@ setjmp:
 	sw ra,    52(a0)
 
 #ifndef __riscv_float_abi_soft
+#ifdef __riscv_float_abi_double
 	fsd fs0,  56(a0)
 	fsd fs1,  64(a0)
 	fsd fs2,  72(a0)
@@ -35,6 +36,7 @@ setjmp:
 	fsd fs9,  128(a0)
 	fsd fs10, 136(a0)
 	fsd fs11, 144(a0)
+#endif
 #endif
 
 	li a0, 0

@@ -6,7 +6,7 @@
 #include "bits/syscall.h"
 #include "sys/mman.h"
 #include "syscall_arch.h"
-#include "jolt_vm.h"
+#include "openvm_vm.h"
 
 struct syscall_context {
   long n;
@@ -19,16 +19,10 @@ struct syscall_context {
   int *processed;
 };
 
-extern char __heap_start[];
-extern char __heap_end[];
+extern char _end[];
 
-/*
- * Jolt has __heap_start and __heap_end symbols available for us to
- * check heap region.
- */
-
-static long default_brk_min = (long)__heap_start;
-static long default_brk_max = (long)__heap_end;
+static long default_brk_min = (long)_end;
+static long default_brk_max = OPENVM_HEAP_END;
 
 weak_alias(default_brk_min, __ckb_hijack_brk_min);
 weak_alias(default_brk_max, __ckb_hijack_brk_max);
@@ -57,7 +51,7 @@ weak_alias(default_brk, __ckb_hijack_brk);
 static long default_mmap(void *c) {
   struct syscall_context *context = (struct syscall_context *)c;
 
-  if (context->n != SYS_mmap) {
+  if (context->n != SYS_mmap2) {
     return (long)-1;
   }
 
@@ -126,7 +120,7 @@ static long default_ioctl(void *c) {
 }
 weak_alias(default_ioctl, __ckb_hijack_ioctl);
 
-/* writev result is reinterpreted to jolt IO handler
+/* writev result is reinterpreted to OpenVM IO handler
  */
 static long default_writev(void *c) {
   struct syscall_context *context = (struct syscall_context *)c;
@@ -147,7 +141,7 @@ static long default_writev(void *c) {
 
   ssize_t total = 0;
   for (int i = 0; i < iovcnt; i++) {
-    jolt_vm_print(iov[i].iov_base, iov[i].iov_len);
+    openvm_print(iov[i].iov_base, iov[i].iov_len);
     total += iov[i].iov_len;
   }
   return total;

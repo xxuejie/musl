@@ -23,6 +23,7 @@ longjmp:
 	lw ra,    52(a0)
 
 #ifndef __riscv_float_abi_soft
+#ifdef __riscv_float_abi_double
 	fld fs0,  56(a0)
 	fld fs1,  64(a0)
 	fld fs2,  72(a0)
@@ -35,6 +36,7 @@ longjmp:
 	fld fs9,  128(a0)
 	fld fs10, 136(a0)
 	fld fs11, 144(a0)
+#endif
 #endif
 
 	seqz a0, a1

@@ -2,13 +2,13 @@
 set -ex
 
 CLANG="${CLANG:-clang-18}"
-BASE_CFLAGS="${BASE_CFLAGS:---target=riscv64 -march=rv64imc_zba_zbb_zbc_zbs -DPAGE_SIZE=4096 -O3}"
+BASE_CFLAGS="${BASE_CFLAGS:---target=riscv32 -march=rv32im -DPAGE_SIZE=4096 -O3}"
 N_PROC="${N_PROC:-$(nproc)}"
 
 mkdir -p release
 CC="${CLANG}" CFLAGS="${BASE_CFLAGS}" \
   ./configure \
-    --target=riscv64-linux-musl \
+    --target=riscv32-linux-musl \
     --disable-shared \
     --with-malloc=oldmalloc \
     --prefix=`pwd`/release
@@ -38,6 +38,6 @@ for f in ${CKB_HEADERS[@]}; do
   cp ckb/$f.h release/include/ckb/$f.h
 done
 
-rm -rf release/include/jolt
-mkdir -p release/include/jolt
-cp ckb/jolt* release/include/jolt/
+rm -rf release/include/openvm
+mkdir -p release/include/openvm
+cp ckb/openvm* release/include/openvm/
